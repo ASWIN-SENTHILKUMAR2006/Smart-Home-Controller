@@ -145,7 +145,7 @@ if (isset($_GET['action'])) {
             </div>
 
             <!-- Schedules Tab -->
-            <div class="tab-content" id="schedules-tab">
+            <div class="tab-content " id="schedules-tab">
                 <h2>Schedule Device Action</h2>
                 <div class="card">
                     <form id="schedule-form">
@@ -187,6 +187,27 @@ if (isset($_GET['action'])) {
     <div id="toast" class="toast"></div>
     <script src="script.js"></script>
     <script>
+        // document.addEventListener('DOMContentLoaded', function () {
+        //     // 1. Get the table element directly by its ID.
+        //     const table = document.getElementById('user_table_hide');
+
+        //     if (table) {
+        //         // 2. Select all rows (<tr>) within that table.
+        //         const rows = table.querySelectorAll('tr');
+
+        //         // 3. Loop through each row found.
+        //         rows.forEach(function (row) {
+        //             // 4. Select the FIRST *ELEMENT* CHILD (which is guaranteed to be <th> or <td>),
+        //             // ignoring potential whitespace/text nodes.
+        //             const firstCell = row.firstElementChild;
+
+        //             // 5. Hide the cell if it exists.
+        //             if (firstCell) {
+        //                 firstCell.style.display = 'none';
+        //             }
+        //         });
+        //     }
+        // });
         const role = 'user';
         loadUserDevices();
         loadSchedules();

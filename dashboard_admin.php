@@ -65,11 +65,24 @@ if (isset($_GET['action'])) {
 
         case 'delete_user':
             $user_id = intval($_POST['user_id']);
-            if ($conn->query("DELETE FROM users WHERE user_id = $user_id AND role != 'admin'")) {
+            $result = $conn->query("SELECT role FROM users WHERE user_id=$user_id");
+            $user = $result->fetch_assoc();
+
+            if ($user['role'] == 'admin') {
+                echo json_encode(['success' => false, 'error' => 'Cannot delete another admin']);
+                exit();
+            }
+
+            if ($conn->query("DELETE FROM users WHERE user_id = $user_id")) {
                 echo json_encode(['success' => true]);
             } else {
                 echo json_encode(['success' => false, 'error' => $conn->error]);
             }
+            // if ($conn->query("DELETE FROM users WHERE user_id = $user_id AND role != 'admin'")) {
+            //     echo json_encode(['success' => true]);
+            // } else {
+            //     echo json_encode(['success' => false, 'error' => $conn->error]);
+            // }
             exit();
 
         case 'assign_device':
@@ -94,6 +107,30 @@ if (isset($_GET['action'])) {
                 echo json_encode(['success' => false, 'error' => $conn->error]);
             }
             exit();
+
+        case 'make_admin':
+            $user_id = intval($_POST['user_id']);
+            if ($conn->query("UPDATE users SET role='admin' WHERE user_id=$user_id")) {
+                // Log action
+                $conn->query("INSERT INTO activity_logs (user_id, action, executed_by) VALUES ($user_id, 'PROMOTED TO ADMIN', 'admin')");
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'error' => $conn->error]);
+            }
+            exit();
+
+        case 'demote_user':
+            $user_id = intval($_POST['user_id']);
+            if ($conn->query("UPDATE users SET role='user' WHERE user_id=$user_id")) {
+                // Log action
+                $conn->query("INSERT INTO activity_logs (user_id, action, executed_by) VALUES ($user_id, 'DEMOTED TO USER', 'admin')");
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'error' => $conn->error]);
+            }
+            exit();
+
+
 
         case 'remove_assignment':
             $assignment_id = intval($_POST['assignment_id']);
@@ -120,7 +157,7 @@ if (isset($_GET['action'])) {
 </head>
 
 <body>
-    <div class="dashboard">
+    <div class="dashboard container-fluid">
         <nav class="navbar">
             <h1>🏠 Smart Home - Admin</h1>
             <div class="nav-right">

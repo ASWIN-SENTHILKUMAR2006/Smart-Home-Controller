@@ -1,8 +1,14 @@
 <?php
+date_default_timezone_set('Asia/Kolkata');
 require_once 'db.php';
+require_once __DIR__ . '/db.php';
+
 
 header('Content-Type: application/json');
 
+header('Content-Type: application/json');
+$now = date('Y-m-d H:i:s');
+$next_30_seconds = date('Y-m-d H:i:s', strtotime('+30 seconds'));
 // Get current time and time 30 seconds from now
 $now = date('Y-m-d H:i:s');
 $next_30_seconds = date('Y-m-d H:i:s', strtotime('+30 seconds'));

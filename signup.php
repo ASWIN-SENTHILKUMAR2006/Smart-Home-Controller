@@ -8,7 +8,7 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $conn->real_escape_string($_POST['name']);
     $email = $conn->real_escape_string($_POST['email']);
-    $password = $_POST['password'];
+    $password = $conn->real_escape_string($_POST['password']);
     $role = $conn->real_escape_string($_POST['role']);
 
     // Check if email already exists
@@ -16,9 +16,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($check->num_rows > 0) {
         $error = 'Email already registered';
     } else {
+        // Insert user
         $sql = "INSERT INTO users (name, email, password, role) VALUES ('$name', '$email', '$password', '$role')";
 
         if ($conn->query($sql)) {
+            $user_id = $conn->insert_id;
+
+            // If provider -> auto add default provider record
+            if ($role === 'provider') {
+                $stmt = $conn->prepare("INSERT INTO providers (company_name, support_contact, user_id) VALUES (?, ?, ?)");
+
+                $defaultCompany = 'New Provider Company';
+                $defaultContact = $email;
+
+                $stmt->bind_param("ssi", $defaultCompany, $defaultContact, $user_id);
+                $stmt->execute();
+            }
+
             $success = 'Account created successfully! You can now login.';
         } else {
             $error = 'Registration failed: ' . $conn->error;

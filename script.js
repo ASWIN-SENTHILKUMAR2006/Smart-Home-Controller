@@ -23,16 +23,24 @@ async function loadUsers() {
     }
 
     container.innerHTML = users.map(user => `
-        <div class="user-card">
-            <h3>${user.name}</h3>
-            <p><strong>Email:</strong> ${user.email}</p>
-            <p><span class="user-role role-${user.role}">${user.role.toUpperCase()}</span></p>
-            ${user.role !== 'admin' ? `
-                <button class="btn btn-danger" style="margin-top: 10px; width: 100%;" 
-                        onclick="deleteUser(${user.user_id})">Delete User</button>
-            ` : ''}
-        </div>
-    `).join('');
+    <div class="user-card">
+        <h3>${user.name}</h3>
+        <p><strong>Email:</strong> ${user.email}</p>
+        <p><span class="user-role role-${user.role}">${user.role.toUpperCase()}</span></p>
+
+        ${user.role !== 'admin' ? `
+            <button class="btn btn-primary" style="margin-top: 10px; width: 100%;" 
+                onclick="makeAdmin(${user.user_id})">Make Admin</button>
+            <button class="btn btn-danger" style="margin-top: 10px; width: 100%;" 
+                onclick="deleteUser(${user.user_id})">Delete User</button>
+        ` : `
+            <button class="btn btn-warning" style="margin-top: 10px; width: 100%;" 
+                onclick="demoteUser(${user.user_id})">Demote to User</button>
+        `}
+    </div>
+`).join('');
+
+
 
     // Populate assign dropdown (users only)
     if (assignUserSelect) {
@@ -111,6 +119,7 @@ async function loadAssignments() {
 async function loadLogs() {
     const response = await fetch('?action=get_logs');
     const logs = await response.json();
+    console.log(logs + "📜");
 
     const container = document.getElementById('logs-list');
 
@@ -120,7 +129,7 @@ async function loadLogs() {
     }
 
     container.innerHTML = `
-        <table>
+        <table id="user_table_hide">
             <thead>
                 <tr>
                     <th>User</th>
@@ -133,7 +142,7 @@ async function loadLogs() {
             <tbody>
                 ${logs.map(log => `
                     <tr>
-                        <td>${log.user_name || 'N/A'}</td>
+                        <td>${log.user_name || 'User'}</td>
                         <td>${log.device_name || 'N/A'}</td>
                         <td><strong>${log.action}</strong></td>
                         <td>${log.executed_by}</td>
@@ -144,7 +153,6 @@ async function loadLogs() {
         </table>
     `;
 }
-
 async function deleteUser(userId) {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
@@ -436,6 +444,40 @@ async function runScheduler() {
         console.error('Scheduler error:', error);
     }
 }
+async function makeAdmin(user_id) {
+    if (!confirm("Make this user an Admin?")) return;
+
+    const formData = new FormData();
+    formData.append('user_id', user_id);
+
+    const response = await fetch('?action=make_admin', { method: 'POST', body: formData });
+    const data = await response.json();
+
+    if (data.success) {
+        showToast('User promoted to Admin', 'success');
+        loadUsers();
+    } else {
+        showToast(data.error, 'error');
+    }
+}
+
+async function demoteUser(user_id) {
+    if (!confirm("Demote this admin to User?")) return;
+
+    const formData = new FormData();
+    formData.append('user_id', user_id);
+
+    const response = await fetch('?action=demote_user', { method: 'POST', body: formData });
+    const data = await response.json();
+
+    if (data.success) {
+        showToast('Admin demoted to User', 'success');
+        loadUsers();
+    } else {
+        showToast(data.error, 'error');
+    }
+}
+
 
 // Stop polling when page unloads
 window.addEventListener('beforeunload', () => {
