@@ -203,17 +203,24 @@ function buildSystemPrompt($context, $role)
 
 function callHuggingFaceAPI($prompt, $api_key)
 {
-    // Using Hugging Face Inference API with Mistral-7B model (free tier)
-    $api_url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
+    // Using NEW Hugging Face Router API
+    $api_url = "https://huggingface.co/api/mistralai/Mistral-7B-Instruct-v0.3";
 
     $data = [
-        'inputs' => $prompt,
-        'parameters' => [
-            'max_new_tokens' => 200,
-            'temperature' => 0.7,
-            'top_p' => 0.9,
-            'return_full_text' => false
-        ]
+        'model' => 'mistralai/Mistral-7B-Instruct-v0.3',
+        'messages' => [
+            [
+                'role' => 'system',
+                'content' => 'You are a helpful AI assistant for a Smart Home system. Provide concise, actionable answers in 2-4 sentences.'
+            ],
+            [
+                'role' => 'user',
+                'content' => $prompt
+            ]
+        ],
+        'max_tokens' => 200,
+        'temperature' => 0.7,
+        'stream' => false
     ];
 
     $ch = curl_init($api_url);
@@ -224,23 +231,40 @@ function callHuggingFaceAPI($prompt, $api_key)
         'Authorization: Bearer ' . $api_key,
         'Content-Type: application/json'
     ]);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_error = curl_error($ch);
     curl_close($ch);
 
+    if ($curl_error) {
+        return "Connection error: " . $curl_error . ". Please check your internet connection.";
+    }
+
     if ($http_code !== 200) {
-        // Fallback response if API fails
-        return "I'm having trouble connecting to my AI brain right now. Please check your API key or try again later. In the meantime, you can use the dashboard tabs to manage your devices!";
+        if ($http_code == 401) {
+            return "API key is invalid. Please check your Hugging Face API key.";
+        } elseif ($http_code == 503) {
+            return "The AI model is loading. Please wait 30 seconds and try again.";
+        } elseif ($http_code == 410) {
+            return "API endpoint outdated. Please update chatbot.php with the new router URL.";
+        }
+        return "I'm having trouble connecting (Error: $http_code). Please try again later.";
     }
 
     $result = json_decode($response, true);
 
+    // New API response format
+    if (isset($result['choices'][0]['message']['content'])) {
+        return trim($result['choices'][0]['message']['content']);
+    }
+
+    // Fallback formats
     if (isset($result[0]['generated_text'])) {
         return trim($result[0]['generated_text']);
     }
 
-    // Alternative API response format
     if (isset($result['generated_text'])) {
         return trim($result['generated_text']);
     }
