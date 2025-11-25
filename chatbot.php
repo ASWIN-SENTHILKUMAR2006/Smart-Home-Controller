@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 require_once 'db.php';
+require_once 'applicationsettings.php';
 
 header('Content-Type: application/json');
 
@@ -8,7 +9,7 @@ header('Content-Type: application/json');
 // 🔑 REPLACE THIS WITH YOUR HUGGING FACE API KEY
 // Get free API key from: https://huggingface.co/settings/tokens
 // ============================================
-$HUGGINGFACE_API_KEY = "YOUR_HUGGINGFACE_API_KEY_HERE";
+$HUGGINGFACE_API_KEY = $api_key; // add your Hugging face api key here
 // ============================================
 
 $user_id = $_SESSION['user_id'];
